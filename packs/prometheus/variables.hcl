@@ -24,7 +24,7 @@ variable "namespace" {
 
 variable "constraints" {
   description = "Constraints to apply to the entire job."
-  type        = list(object({
+  type = list(object({
     attribute = string
     operator  = string
     value     = string
@@ -40,12 +40,12 @@ variable "constraints" {
 
 variable "prometheus_group_network" {
   description = "The Prometheus network configuration options."
-  type        = object({
+  type = object({
     mode  = string
     ports = map(number)
   })
   default = {
-    mode  = "bridge",
+    mode = "bridge",
     ports = {
       "http" = 9090,
     },
@@ -54,14 +54,14 @@ variable "prometheus_group_network" {
 
 variable "prometheus_task" {
   description = "Details configuration options for the Prometheus task."
-  type        = object({
+  type = object({
     driver   = string
     version  = string
     cli_args = list(string)
   })
   default = {
-    driver   = "docker",
-    version  = "2.30.2",
+    driver  = "docker",
+    version = "2.30.2",
     cli_args = [
       "--config.file=/etc/prometheus/config/prometheus.yml",
       "--storage.tsdb.path=/prometheus",
@@ -127,7 +127,7 @@ variable "prometheus_task_app_rules_yaml" {
 
 variable "prometheus_task_resources" {
   description = "The resource to assign to the Prometheus task."
-  type        = object({
+  type = object({
     cpu    = number
     memory = number
   })
@@ -137,21 +137,28 @@ variable "prometheus_task_resources" {
   }
 }
 
-variable "prometheus_task_services" {
+variable "prometheus_group_services" {
   description = "Configuration options of the Prometheus services and checks."
-  type        = list(object({
+  type = list(object({
     service_port_label = string
     service_name       = string
     service_tags       = list(string)
-    check_enabled      = bool
-    check_path         = string
-    check_interval     = string
-    check_timeout      = string
+    sidecar_enabled    = bool
+    sidecar_upstreams = list(object({
+      name = string
+      port = number
+    }))
+    check_enabled  = bool
+    check_path     = string
+    check_interval = string
+    check_timeout  = string
   }))
   default = [{
     service_port_label = "http",
     service_name       = "prometheus",
     service_tags       = [],
+    sidecar_enabled    = false
+    sidecar_upstreams  = []
     check_enabled      = true,
     check_path         = "/-/healthy",
     check_interval     = "3s",

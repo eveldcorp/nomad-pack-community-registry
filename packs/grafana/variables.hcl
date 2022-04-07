@@ -37,6 +37,57 @@ variable "upstreams" {
   }))
 }
 
+variable "datasources" {
+  description = ""
+  type = list(object({
+    name = string
+    data = string
+  }))
+  default = [{
+    name = "prometheus"
+    data = <<EOF
+apiVersion: 1
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+
+datasources:
+- name: Prometheus
+  type: prometheus
+  access: proxy
+  orgId: 1
+  url: http://localhost:9090
+  version: 1
+  editable: true
+EOF
+    }, {
+    name = "loki"
+    data = <<EOF
+apiVersion: 1
+deleteDatasources:
+  - name: Loki
+    orgId: 1
+
+datasources:
+- name: Loki
+  type: loki
+  access: proxy
+  orgId: 1
+  url: http://localhost:3100
+  version: 1
+  editable: true
+EOF
+  }]
+}
+
+variable "dashboards" {
+  description = ""
+  type = list(object({
+    name = string
+    data = string
+  }))
+}
+
 variable "resources" {
   description = "The resource to assign to the Grafana service task"
   type = object({

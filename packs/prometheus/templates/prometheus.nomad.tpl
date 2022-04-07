@@ -24,6 +24,41 @@ job [[ template "full_job_name" . ]] {
       [[- end ]]
     }
 
+    [[- if .prometheus.prometheus_group_services ]]
+    [[- $ports := .prometheus.prometheus_group_network.ports ]]
+    [[- range $idx, $service := .prometheus.prometheus_group_services ]]
+    service {
+      name = [[ $service.service_name | quote ]]
+      port = [[ index $ports $service.service_port_label | quote ]]
+      tags = [[ $service.service_tags | toPrettyJson ]]
+
+      [[- if $service.sidecar_enabled ]]
+      connect {
+        sidecar_service {
+          [[- if $service.sidecar_upstreams]]
+          [[- range $uidx, $upstream := $service.sidecar_upstreams ]]
+            upstreams {
+              destination_name = [[ $upstream.name | quote ]]
+              local_bind_port  = [[ $upstream.port ]]
+            }
+          [[- end]]
+          [[- end]]
+        }
+      }
+      [[- end ]]
+
+      [[- if not $service.sidecar_enabled ]]
+      check {
+        type     = "http"
+        path     = [[ $service.check_path | quote ]]
+        interval = [[ $service.check_interval | quote ]]
+        timeout  = [[ $service.check_timeout | quote ]]
+      }
+      [[- end ]]
+    }
+    [[- end ]]
+    [[- end ]]
+
     task "prometheus" {
       driver = "docker"
 
@@ -63,23 +98,6 @@ EOH
         cpu    = [[ .prometheus.prometheus_task_resources.cpu ]]
         memory = [[ .prometheus.prometheus_task_resources.memory ]]
       }
-
-      [[- if .prometheus.prometheus_task_services ]]
-      [[- range $idx, $service := .prometheus.prometheus_task_services ]]
-      service {
-        name = [[ $service.service_name | quote ]]
-        port = [[ $service.service_port_label | quote ]]
-        tags = [[ $service.service_tags | toPrettyJson ]]
-
-        check {
-          type     = "http"
-          path     = [[ $service.check_path | quote ]]
-          interval = [[ $service.check_interval | quote ]]
-          timeout  = [[ $service.check_timeout | quote ]]
-        }
-      }
-      [[- end ]]
-      [[- end ]]
     }
   }
 }

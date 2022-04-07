@@ -42,13 +42,29 @@ job [[ template "job_name" . ]] {
 
       config {
         image = "grafana/grafana:[[ .grafana.version_tag ]]"
-        ports = ["http"]
+        volumes = [
+          "local/datasources:/etc/grafana/provisioning/datasources",
+          "local/dashboards:/etc/grafana/provisioning/dashboards",
+        ]
       }
 
       resources {
         cpu    = [[ .grafana.resources.cpu ]]
         memory = [[ .grafana.resources.memory ]]
       }
+
+      [[- if .grafana.datasources ]]
+      [[- range $idx, $datasource := .grafana.datasources ]]
+      template {
+        change_mode   = "signal"
+        change_signal = "SIGHUP"
+        destination   = "local/datasources/[[ $datasource.name ]].yml"
+        data = <<EOF
+[[ $datasource.data ]]
+        EOF
+      }
+      [[- end]]
+      [[- end]]
     }
   }
 }
